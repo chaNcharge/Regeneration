@@ -4,9 +4,14 @@ import me.suff.regeneration.common.item.ItemLindos;
 import me.suff.regeneration.handlers.RegenObjects;
 import me.suff.regeneration.util.ClientUtil;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityFlying;
 import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.EntityAIPanic;
+import net.minecraft.entity.ai.EntityAIWanderAvoidWaterFlying;
 import net.minecraft.entity.ai.EntityFlyHelper;
+import net.minecraft.entity.passive.EntityParrot;
+import net.minecraft.entity.passive.IFlyingAnimal;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.datasync.DataParameter;
@@ -20,7 +25,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-public class EntityLindos extends EntityFlying {
+public class EntityLindos extends EntityCreature implements IFlyingAnimal {
 	
 	private static final DataParameter<Integer> AMOUNT = EntityDataManager.createKey(EntityLindos.class, DataSerializers.VARINT);
 	
@@ -29,6 +34,9 @@ public class EntityLindos extends EntityFlying {
 		super(RegenObjects.EntityEntries.ITEM_LINDOS_TYPE, worldIn);
 		setSize(0.5F, 0.5F);
 		this.moveHelper = new EntityFlyHelper(this);
+		this.tasks.addTask(0, new EntityAIPanic(this, 1.25D));
+		this.tasks.addTask(2, new EntityAIWanderAvoidWaterFlying(this, 1.0D));
+		
 	}
 	
 	@Override
@@ -60,7 +68,7 @@ public class EntityLindos extends EntityFlying {
 		setNoGravity(true);
 		
 		if (world.isRemote && ticksExisted == 2) {
-			ClientUtil.playSound(this, RegenObjects.Sounds.HAND_GLOW.getRegistryName(), SoundCategory.AMBIENT, true, () -> !isAlive(), 1.0F);
+			ClientUtil.playSound(this, RegenObjects.Sounds.HAND_GLOW.getRegistryName(), SoundCategory.AMBIENT, true, () -> !isAlive(), 0.3F);
 		}
 		
 		if (ticksExisted < 60) {
@@ -78,7 +86,6 @@ public class EntityLindos extends EntityFlying {
 	
 	@Override
 	protected boolean processInteract(EntityPlayer player, EnumHand hand) {
-		
 		if (!world.isRemote) {
 			ItemStack stack = player.getHeldItem(hand);
 			if (stack.getItem() == RegenObjects.Items.LINDOS_VIAL) {

@@ -16,7 +16,6 @@ import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUseContext;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
@@ -136,15 +135,15 @@ public class ItemLindos extends ItemOverrideBase {
 	}
 	
 	@Override
-	public EnumActionResult onItemUse(ItemUseContext useContext) {
-		EntityPlayer player = useContext.getPlayer();
-		
-		if (!player.world.isRemote) {
-			ItemStack itemStack = useContext.getItem();
+	public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer player, EnumHand handIn) {
+		ItemStack stack = player.getHeldItem(handIn);
+		IRegeneration cap = CapabilityRegeneration.getForPlayer(player).orElse(null);
+		if (!worldIn.isRemote) {
+			
 			RayTraceResult raytraceresult = this.rayTrace(player.world, player, true);
 			
 			if (raytraceresult == null || raytraceresult.getBlockPos() == null) {
-				return EnumActionResult.FAIL;
+				return ActionResult.newResult(EnumActionResult.FAIL, player.getHeldItem(handIn));
 			}
 			
 			BlockPos blockPos = raytraceresult.getBlockPos();
@@ -152,28 +151,18 @@ public class ItemLindos extends ItemOverrideBase {
 			Material material = iblockstate.getMaterial();
 			
 			if (material == Material.WATER) {
-				player.world.setBlockState(blockPos, Blocks.AIR.getDefaultState(), 11);
-				player.playSound(SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
-				
-				if (!hasWater(itemStack)) {
-					setWater(itemStack, true);
+				if (!hasWater(stack)) {
+					player.world.setBlockState(blockPos, Blocks.AIR.getDefaultState(), 11);
+					player.playSound(SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
+					setWater(stack, true);
 					player.playSound(SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
 					PlayerUtil.sendMessage(player, new TextComponentTranslation("nbt.item.water_filled"), true);
 				} else {
 					PlayerUtil.sendMessage(player, new TextComponentTranslation("nbt.item.water_already_filled"), true);
 				}
-				return EnumActionResult.SUCCESS;
+				return ActionResult.newResult(EnumActionResult.FAIL, player.getHeldItem(handIn));
 			}
-		}
-		
-		return super.onItemUse(useContext);
-	}
-	
-	@Override
-	public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer player, EnumHand handIn) {
-		ItemStack stack = player.getHeldItem(handIn);
-		IRegeneration cap = CapabilityRegeneration.getForPlayer(player).orElse(null);
-		if (!worldIn.isRemote) {
+			
 			
 			//If the player is in POST or Regenerating, stop them from drinking it
 			if (cap.getState() == RegenState.POST || cap.getState() == RegenState.REGENERATING || player.isCreative()) {

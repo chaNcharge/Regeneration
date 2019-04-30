@@ -17,6 +17,8 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 
 public class EntityItemOverride extends Entity {
@@ -241,7 +243,12 @@ public class EntityItemOverride extends Entity {
 		}
 	}
 	
-	public static interface IEntityOverride {
+	@Override
+	public ITextComponent getDisplayName() {
+		return getItem().getDisplayName();
+	}
+	
+	public interface IEntityOverride {
 		
 		void update(EntityItemOverride itemOverride);
 		

@@ -68,7 +68,7 @@ sourceSets.main {
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.13.2-25.0.88'
+    minecraft 'net.minecraftforge:forge:1.13.2-25.0.191'
     compile 'org.jsoup:jsoup:1.11.3'
 }
 
