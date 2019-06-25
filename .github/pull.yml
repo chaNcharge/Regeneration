@@ -1,5 +1,6 @@
 version: "1"
 rules:
   - base: master
-    upstream: Suffril:1.12
-    mergeMethod: merge
+    upstream: Suffril:1.12        # change wei to the owner of upstream repo
+    autoMerge: true
+    autoMergeHardReset: false
