@@ -48,6 +48,9 @@ regeneration.toast.enter_critical=You are going critical
 regeneration.toast.enter_critical.sub=%s minutes left...
 regeneration.toast.timelord=You are now a Time lord!
 regeneration.toast.to_use=You have %s lives now!
+regeneration.messages.jar_amount=This container currently contains %s Lindos!
+regeneration.messages.jar_inuse=This is in use!
+tile.regeneration.hand_jar.name=Hand in a Jar
 
 regeneration.messages.regen_chat_message=%s is regenerating...
 regeneration.messages.warning.grace=You are in a state of grace, press %s to regenerate!
@@ -55,7 +58,9 @@ regeneration.messages.warning.grace_critical=You are near death, press %s to reg
 regeneration.messages.regen_delayed=Regeneration delayed!
 regeneration.messages.regen_warning=Punch a block to delay your regeneration further
 regeneration.messages.theft=You stole the body of %s!
-
+regeneration.messages.jar=You have gained a Regeneration from harvested lindos!
+regeneration.messages.jar_not_enough=There is not enough Lindos in this jar! [100 Lindos = 1 free Regeneration]
+regeneration.messages.jar_no_break=You cannot break this Jar while it has %s Lindos Energy!
 
 config.regeneration.max_regens=Amount of regenerations per cycle
 config.regeneration.free_regens=Free regenerations
@@ -111,6 +116,7 @@ config.regeneration.category.skins=Skin changing
 config.regeneration.category.on_regen=When Regenerating
 config.regeneration.category.post_regen=Post regeneration
 config.regeneration.skins.folder=Skin Regeneration folder
+config.regeneration.post_grater=Create fall damage crator?
 
 traits.athlete.name=Athletic genes! (You can run faster!)
 traits.boring.name=Lazy genes! (You're useless!)
@@ -122,6 +128,8 @@ traits.tough.name=Strong genes! (You deal more damage in a punch!)
 traits.fire.name=Non-flammable genes! (You're immune to fire!)
 traits.hunger.name=Hunger genes! (You starve faster!)
 traits.nightvision.name=Bat genes! (You can see in the Dark!)
+traits.wallclimbing.name=Spider Genes! (You can climb walls!)
+traits.repel_arrow.name=Thick Skinned Genes (Arrows bounce off you!)
 
 nbt.item.lindos=Lindos Energy: %s
 regeneration.messages.no_water=This Vial has no water...
