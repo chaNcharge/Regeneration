@@ -1,5 +1,5 @@
 version: "1"
 rules:
   - base: "1.12"
-    upstream: "Suffril:1.12"
+    upstream: "Swirtzly:1.12"
     mergeMethod: "merge"
