@@ -121,8 +121,7 @@ public class SkinChangingHandler {
                 }
             } else {
                 pixelData = cap.getNextSkin();
-                cap.setEncodedSkin(pixelData);
-                NetworkHandler.INSTANCE.sendToServer(new MessageUpdateSkin(pixelData, cap.getNextSkinType().getMojangType().equals("slim")));
+                NetworkHandler.INSTANCE.sendToServer(new MessageUpdateSkin(pixelData, cap.getNextSkinType() == SkinInfo.SkinType.ALEX));
             }
 
         } else {
@@ -163,11 +162,10 @@ public class SkinChangingHandler {
         }
 
         ResourceLocation resourceLocation;
-        SkinInfo.SkinType skinType = null;
+        SkinInfo.SkinType skinType = getSkinType(player);
 
         if (data.getEncodedSkin().toLowerCase().equals("none") || data.getEncodedSkin().equals(" ") || data.getEncodedSkin().equals("")) {
             resourceLocation = getMojangSkin(player);
-            skinType = getSkinType(player);
         } else {
             BufferedImage bufferedImage = toImage(data.getEncodedSkin());
             bufferedImage = ClientUtil.ImageFixer.convertSkinTo64x64(bufferedImage);
@@ -176,7 +174,6 @@ public class SkinChangingHandler {
             } else {
                 DynamicTexture tex = new DynamicTexture(bufferedImage);
                 resourceLocation = Minecraft.getMinecraft().getTextureManager().getDynamicTextureLocation(player.getName().toLowerCase() + "_skin_" + System.currentTimeMillis(), tex);
-                skinType = data.getSkinType();
             }
         }
         return new SkinInfo(resourceLocation, skinType);
@@ -259,7 +256,6 @@ public class SkinChangingHandler {
     }
 
     public static void setSkinType(AbstractClientPlayer player, SkinInfo.SkinType skinType) {
-        if (skinType.getMojangType().equals(player.getSkinType())) return;
         NetworkPlayerInfo playerInfo = player.playerInfo;
         playerInfo.skinType = skinType.getMojangType();
     }
@@ -271,12 +267,19 @@ public class SkinChangingHandler {
         }
         MinecraftProfileTexture profile = map.get(MinecraftProfileTexture.Type.SKIN);
 
-        if (profile == null) {
-            return SkinInfo.SkinType.STEVE;
-        }
+        IRegeneration data = CapabilityRegeneration.getForPlayer(player);
 
-        if (profile.getMetadata("model") == null) {
-            return SkinInfo.SkinType.STEVE;
+
+        if (data.getEncodedSkin().toLowerCase().equals("none")) {
+            if (profile == null) {
+                return SkinInfo.SkinType.STEVE;
+            }
+            System.out.println(profile.getMetadata("model"));
+            if (profile.getMetadata("model") == null) {
+                return SkinInfo.SkinType.STEVE;
+            }
+        } else {
+            return data.getSkinType();
         }
 
         return SkinInfo.SkinType.ALEX;
@@ -287,6 +290,10 @@ public class SkinChangingHandler {
         AbstractClientPlayer player = (AbstractClientPlayer) e.getEntityPlayer();
         IRegeneration cap = CapabilityRegeneration.getForPlayer(player);
         IRegenType type = TypeHandler.getTypeInstance(cap.getType());
+
+        if (player.playerInfo == null || player.playerInfo.skinType == null) {
+            return;
+        }
 
         if (cap.getState() == PlayerUtil.RegenState.REGENERATING) {
             type.getRenderer().onRenderRegeneratingPlayerPost(type, e, cap);
