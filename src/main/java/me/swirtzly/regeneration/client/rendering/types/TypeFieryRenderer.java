@@ -100,7 +100,6 @@ public class TypeFieryRenderer extends ATypeRenderer<TypeFiery> {
         Vec3d primaryColor = new Vec3d(style.getFloat("PrimaryRed"), style.getFloat("PrimaryGreen"), style.getFloat("PrimaryBlue"));
         Vec3d secondaryColor = new Vec3d(style.getFloat("SecondaryRed"), style.getFloat("SecondaryGreen"), style.getFloat("SecondaryBlue"));
 
-
         // State manager changes
         GlStateManager.pushAttrib();
         GlStateManager.disableTexture2D();
@@ -145,35 +144,40 @@ public class TypeFieryRenderer extends ATypeRenderer<TypeFiery> {
         double animationProgress = data.getAnimationTicks();
         double arm_shake = player.getRNG().nextDouble();
 
-        float armRot = (float) animationProgress * 1.5F;
+        float armRotY = (float) animationProgress * 1.5F;
+        float armRotZ = (float) animationProgress * 1.5F;
         float headRot = (float) animationProgress * 1.5F;
 
-        if (armRot > 90) {
-            armRot = 90;
+        if (armRotY > 90) {
+            armRotY = 90;
+        }
+
+        if (armRotZ > 95) {
+            armRotZ = 95;
         }
 
         if (headRot > 45) {
             headRot = 45;
         }
 
-
-        //ARMS
+        // ARMS
         playerModel.bipedLeftArm.rotateAngleY = 0;
         playerModel.bipedRightArm.rotateAngleY = 0;
 
         playerModel.bipedLeftArm.rotateAngleX = 0;
         playerModel.bipedRightArm.rotateAngleX = 0;
 
-        playerModel.bipedLeftArm.rotateAngleZ = (float) -Math.toRadians(armRot + arm_shake);
-        playerModel.bipedRightArm.rotateAngleZ = (float) Math.toRadians(armRot + arm_shake);
+        playerModel.bipedLeftArm.rotateAngleZ = (float) -Math.toRadians(armRotZ + arm_shake);
+        playerModel.bipedRightArm.rotateAngleZ = (float) Math.toRadians(armRotZ + arm_shake);
+        playerModel.bipedLeftArm.rotateAngleY = (float) -Math.toRadians(armRotY);
+        playerModel.bipedRightArm.rotateAngleY = (float) Math.toRadians(armRotY);
 
-        //BODY
+        // BODY
         playerModel.bipedBody.rotateAngleX = 0;
         playerModel.bipedBody.rotateAngleY = 0;
         playerModel.bipedBody.rotateAngleZ = 0;
 
-
-        //LEGS
+        // LEGS
         playerModel.bipedLeftLeg.rotateAngleY = 0;
         playerModel.bipedRightLeg.rotateAngleY = 0;
 
@@ -183,6 +187,7 @@ public class TypeFieryRenderer extends ATypeRenderer<TypeFiery> {
         playerModel.bipedLeftLeg.rotateAngleZ = (float) -Math.toRadians(5);
         playerModel.bipedRightLeg.rotateAngleZ = (float) Math.toRadians(5);
 
+
         playerModel.bipedHead.rotateAngleX = (float) Math.toRadians(-headRot);
         playerModel.bipedHead.rotateAngleY = (float) Math.toRadians(0);
         playerModel.bipedHead.rotateAngleZ = (float) Math.toRadians(0);
@@ -190,7 +195,7 @@ public class TypeFieryRenderer extends ATypeRenderer<TypeFiery> {
         return copyAndReturn(playerModel, true);
     }
 
-    @Deprecated //This duplicated code needs sorted asap
+    @Deprecated // This duplicated code needs sorted asap
     @Override
     public void renderHand(EntityPlayer player, EnumHandSide handSide, RenderLivingBase<?> render) {
         renderConeAtArms(player);
@@ -234,7 +239,7 @@ public class TypeFieryRenderer extends ATypeRenderer<TypeFiery> {
             player.bipedHead.postRender(0.0625F);
         }
 
-        //GlStateManager.translate(0f, 0.1f, 0f);
+        // GlStateManager.translate(0f, 0.1f, 0f);
         GlStateManager.rotate(180, 1.0f, 0.0f, 0.0f);
 
         renderCone(entityPlayer, primaryScale / 1.6F, primaryScale * .75F, primaryColor);
@@ -254,5 +259,5 @@ public class TypeFieryRenderer extends ATypeRenderer<TypeFiery> {
         GlStateManager.enableTexture2D();
         GlStateManager.popAttrib();
     }
-
+	
 }

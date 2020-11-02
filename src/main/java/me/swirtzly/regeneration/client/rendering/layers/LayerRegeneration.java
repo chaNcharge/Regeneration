@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.Random;
@@ -21,8 +20,7 @@ import static me.swirtzly.regeneration.client.rendering.types.TypeFieryRenderer.
 import static me.swirtzly.regeneration.util.RenderUtil.drawGlowingLine;
 
 /**
- * Created by Sub
- * on 16/09/2018.
+ * Created by Sub on 16/09/2018.
  */
 public class LayerRegeneration implements LayerRenderer<EntityPlayer> {
 
@@ -34,7 +32,7 @@ public class LayerRegeneration implements LayerRenderer<EntityPlayer> {
         LayerRegeneration.playerRenderer = playerRenderer;
     }
 
-    public static void renderGlowingHands(EntityPlayer player, IRegeneration handler, float scale, EnumHandSide side) {
+    public static void renderGlowingHands(EntityPlayer player, IRegeneration handler, float scale) {
         Vec3d primaryColor = handler.getPrimaryColor();
         Vec3d secondaryColor = handler.getSecondaryColor();
 
@@ -56,6 +54,7 @@ public class LayerRegeneration implements LayerRenderer<EntityPlayer> {
 
     @Override
     public void doRenderLayer(EntityPlayer player, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
+
         IRegeneration cap = CapabilityRegeneration.getForPlayer(player);
         IRegenType type = TypeHandler.getTypeInstance(cap.getType());
         if (cap.getState() == PlayerUtil.RegenState.REGENERATING) {
@@ -67,10 +66,9 @@ public class LayerRegeneration implements LayerRenderer<EntityPlayer> {
         }
     }
 
-
     @Override
     public boolean shouldCombineTextures() {
         return false;
     }
-
+	
 }

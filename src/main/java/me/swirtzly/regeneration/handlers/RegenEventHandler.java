@@ -8,6 +8,9 @@ import me.swirtzly.regeneration.common.capability.CapabilityRegeneration;
 import me.swirtzly.regeneration.common.capability.IRegeneration;
 import me.swirtzly.regeneration.common.capability.RegenerationProvider;
 import me.swirtzly.regeneration.common.item.ItemHand;
+import me.swirtzly.regeneration.common.traits.DnaHandler;
+import me.swirtzly.regeneration.network.MessageRemovePlayer;
+import me.swirtzly.regeneration.network.NetworkHandler;
 import me.swirtzly.regeneration.util.PlayerUtil;
 import me.swirtzly.regeneration.util.RegenUtil;
 import net.minecraft.entity.Entity;
@@ -29,20 +32,11 @@ import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
-import net.minecraft.world.storage.loot.LootEntry;
-import net.minecraft.world.storage.loot.LootEntryTable;
-import net.minecraft.world.storage.loot.LootPool;
-import net.minecraft.world.storage.loot.RandomValueRange;
-import net.minecraft.world.storage.loot.conditions.LootCondition;
 import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.common.capabilities.Capability.IStorage;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.LootTableLoadEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
+import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.Loader;
@@ -53,11 +47,11 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerChangedDimensio
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent;
 
+import static me.swirtzly.regeneration.util.PlayerUtil.RegenState.GRACE;
 import static me.swirtzly.regeneration.util.PlayerUtil.RegenState.POST;
 
 /**
- * Created by Sub
- * on 16/09/2018.
+ * Created by Sub on 16/09/2018.
  */
 @Mod.EventBusSubscriber(modid = RegenerationMod.MODID)
 public class RegenEventHandler {
@@ -126,11 +120,22 @@ public class RegenEventHandler {
 
     @SubscribeEvent
     public static void onPunchBlock(PlayerInteractEvent.LeftClickBlock e) {
-        if (e.getEntityPlayer().world.isRemote)
-            return;
+        if (e.getEntityPlayer().world.isRemote) return;
         CapabilityRegeneration.getForPlayer(e.getEntityPlayer()).getStateManager().onPunchBlock(e);
     }
 
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void painless(LivingAttackEvent event) {
+        if (!(event.getEntity() instanceof EntityPlayer))
+            return;
+
+        EntityPlayer player = (EntityPlayer) event.getEntity();
+        IRegeneration cap = CapabilityRegeneration.getForPlayer(player);
+
+        if (cap.getState() == PlayerUtil.RegenState.REGENERATING && RegenConfig.regenFireImmune && event.getSource().isFireDamage() || cap.getState() == PlayerUtil.RegenState.REGENERATING && event.getSource().isExplosion()) {
+            event.setCanceled(true);
+        }
+    }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onHurt(LivingHurtEvent event) {
@@ -186,17 +191,40 @@ public class RegenEventHandler {
                 event.setAmount(0.5F);
                 PlayerUtil.sendMessage(player, new TextComponentTranslation("regeneration.messages.reduced_dmg"), true);
             }
-            return;
         }
 
-        if (cap.getState() == PlayerUtil.RegenState.REGENERATING && RegenConfig.regenFireImmune && event.getSource().isFireDamage() || cap.getState() == PlayerUtil.RegenState.REGENERATING && event.getSource().isExplosion()) {
-            event.setCanceled(true); // TODO still "hurts" the client view
-        } else if (player.getHealth() + player.getAbsorptionAmount() - event.getAmount() <= 0) { // player has actually died
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void adMortemInimicusButForGrace(LivingDamageEvent event) {
+        if (!(event.getEntity() instanceof EntityPlayer))
+            return;
+        EntityPlayer player = (EntityPlayer) event.getEntity();
+        IRegeneration cap = CapabilityRegeneration.getForPlayer(player);
+        if ((cap.getState() == GRACE) && player.getHealth() - event.getAmount() < 0) {
+            //uh oh, we're dying in grace. Forcibly regenerate before all (?) death prevention mods
             boolean notDead = cap.getStateManager().onKilled(event.getSource());
             event.setCanceled(notDead);
         }
     }
 
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void adMortemInimicus(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof EntityPlayer))
+            return;
+        EntityPlayer player = (EntityPlayer) event.getEntity();
+        IRegeneration cap = CapabilityRegeneration.getForPlayer(player);
+        if ((event.getSource() == RegenObjects.REGEN_DMG_CRITICAL || event.getSource() == RegenObjects.REGEN_DMG_KILLED) && !player.world.isRemote) {
+            cap.setDnaType(DnaHandler.DNA_BORING.getRegistryName());
+            if (RegenConfig.loseRegensOnDeath) {
+                cap.extractRegeneration(cap.getRegenerationsLeft());
+            }
+            cap.synchronise();
+            return;
+        }
+        boolean notDead = cap.getStateManager().onKilled(event.getSource());
+        event.setCanceled(notDead);
+    }
 
     @SubscribeEvent
     public static void onKnockback(LivingKnockBackEvent event) {
@@ -210,26 +238,13 @@ public class RegenEventHandler {
     // ================ OTHER ==============
     @SubscribeEvent
     public static void onLogin(PlayerLoggedInEvent event) {
-        if (event.player.world.isRemote)
-            return;
+        if (event.player.world.isRemote) return;
 
-        NBTTagCompound nbt = event.player.getEntityData(),
-                persist = nbt.getCompoundTag(EntityPlayer.PERSISTED_NBT_TAG);
+        NBTTagCompound nbt = event.player.getEntityData(), persist = nbt.getCompoundTag(EntityPlayer.PERSISTED_NBT_TAG);
         if (!persist.getBoolean("loggedInBefore"))
             CapabilityRegeneration.getForPlayer(event.player).receiveRegenerations(RegenConfig.freeRegenerations);
         persist.setBoolean("loggedInBefore", true);
         nbt.setTag(EntityPlayer.PERSISTED_NBT_TAG, persist);
-    }
-
-    @SubscribeEvent
-    public static void registerLoot(LootTableLoadEvent event) {
-        if (!event.getName().toString().toLowerCase().matches(RegenConfig.loot.lootRegex) || RegenConfig.loot.disableLoot)
-            return;
-
-        // TODO configurable chances? Maybe by doing a simple loot table tutorial?
-        LootEntryTable entry = new LootEntryTable(RegenerationMod.LOOT_FILE, 1, 0, new LootCondition[0], "regeneration_inject_entry");
-        LootPool pool = new LootPool(new LootEntry[]{entry}, new LootCondition[0], new RandomValueRange(1), new RandomValueRange(1), "regeneration_inject_pool");
-        event.getTable().addPool(pool);
     }
 
     /**
@@ -254,6 +269,7 @@ public class RegenEventHandler {
 
     @SubscribeEvent
     public static void addRunAwayTask(EntityJoinWorldEvent e) {
+        if (e.getEntity().world.isRemote) return;
         if (e.getEntity() instanceof EntityCreature) {
             EntityCreature living = (EntityCreature) e.getEntity();
             Predicate<Entity> pred = entity -> {
@@ -267,6 +283,10 @@ public class RegenEventHandler {
             };
 
             living.tasks.addTask(0, new EntityAIAvoidEntity(living, EntityPlayer.class, pred, 6.0F, 1.0D, 1.2D));
+        }
+
+        if (e.getEntity() instanceof EntityPlayer) {
+            NetworkHandler.INSTANCE.sendToAll(new MessageRemovePlayer(e.getEntity().getUniqueID()));
         }
     }
 
@@ -293,6 +313,5 @@ public class RegenEventHandler {
             }
         }
     }
-
 
 }

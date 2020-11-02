@@ -7,14 +7,10 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
- * Created by Sub
- * on 17/09/2018.
+ * Created by Sub on 17/09/2018.
  */
 @Config(modid = RegenerationMod.MODID, name = "Regeneration")
 public class RegenConfig {
-
-    @Config.LangKey("config.regeneration.category.loot")
-    public static final Loot loot = new Loot();
 
     @Config.LangKey("config.regeneration.category.grace")
     public static final GracePeriod grace = new GracePeriod();
@@ -30,7 +26,6 @@ public class RegenConfig {
 
     @Config.LangKey("config.regeneration.category.skins")
     public static final Skins skins = new Skins();
-
 
     @Config.LangKey("config.regeneration.max_regens")
     @Config.Comment("The maximum regeneration capacity. This affects the durability of a Fob Watch and the amount of regenerations in a full cycle. Use 0 for infinite regenerations.")
@@ -84,8 +79,11 @@ public class RegenConfig {
     public static boolean craftWithRegens = true;
 
     @Config.LangKey("config.regeneration.shaders")
-    @Config.Comment("Toggle whether cool shaders become applied when Regeneration")
+    @Config.Comment("Toggle whether cool shaders become applied when Regenerating")
     public static boolean regenerationShaders = true;
+
+    @Config.Comment("Toggle whether cool bar things display when Regenerating")
+    public static boolean coolCustomBarThings = true;
 
     public static class OnRegen {
 
@@ -117,7 +115,6 @@ public class RegenConfig {
 
     }
 
-
     public static class PostRegen {
 
         @Config.LangKey("config.regeneration.post_regen_duration")
@@ -129,6 +126,31 @@ public class RegenConfig {
         @Config.Comment("The level of the regeneration status effect granted after you regenerate")
         @Config.RangeInt(min = 0)
         public int postRegenerationLevel = 4;
+
+        @Config.LangKey("config.regeneration.post_regenerationMinimum_lindos")
+        @Config.Comment("Minimum amount of Lindos per particle")
+        @Config.RangeInt(min = 0, max = 100)
+        public int minimumLindos = 0;
+
+        @Config.LangKey("config.regeneration.post_regenerationMaximum_lindos")
+        @Config.Comment("Maximum amount of Lindos per particle. This is ignored if it is less than the minimum")
+        @Config.RangeInt(min = 0, max = 100)
+        public int maximumLindos = 100;
+
+        @Config.LangKey("config.regeneration.post_regenerationLindos_interval")
+        @Config.Comment("Amount of seconds between each check for \"burping\" out a Lindos particle, 0 to disable")
+        @Config.RangeInt(min = 0)
+        public int postRegenerationLindosInterval = 80;
+
+        @Config.LangKey("config.regeneration.post_regenerationLindos_chance_extra")
+        @Config.Comment("The chance for a lindos particle to be \"burped\" out every interval")
+        @Config.RangeDouble(min = 0, max=1)
+        public double lindosChancePerInterval = 0.5;
+
+        @Config.LangKey("config.regeneration.post_regenerationLindos_chance")
+        @Config.Comment("The chance for a lindos particle to spawn when the post phase ends")
+        @Config.RangeDouble(min = 0, max=1)
+        public double lindosChance = 0.5;
 
         @Config.LangKey("config.regeneration.reset_hunger")
         @Config.Comment("Regenerate hunger bars")
@@ -147,7 +169,6 @@ public class RegenConfig {
         @Config.Comment("Create a creator when falling from a great height in POST")
         public boolean genGreator = false;
     }
-
 
     public static class Skins {
         @Config.LangKey("config.regeneration.skins.changemyskin")
@@ -170,21 +191,6 @@ public class RegenConfig {
         @Config.LangKey("config.regeneration.skins.internal_skins")
         @Config.Comment("Toggle whether the mod downloads its own batch of skins")
         public boolean downloadInternalSkins = true;
-    }
-
-
-    public static class Loot {
-
-        @Config.LangKey("config.regeneration.loot_regex")
-        @Config.Comment("The loot pool for chameleon arch's will only be added to loot tables whose name matches this regular expression")
-        @Config.RequiresWorldRestart
-        public String lootRegex = "minecraft:chests\\/.*";
-
-        @Config.LangKey("config.regeneration.disable_loot")
-        @Config.Comment("If this is true there won't be any Fob Watches spawned naturally")
-        @Config.RequiresWorldRestart
-        public boolean disableLoot = false;
-
     }
 
     public static class GracePeriod {
@@ -216,7 +222,6 @@ public class RegenConfig {
 
     }
 
-
     public static class ModIntegrations {
 
         @Config.LangKey("config.regeneration.category.compat.lccore")
@@ -224,7 +229,6 @@ public class RegenConfig {
 
         @Config.LangKey("config.regeneration.category.compat.tardis")
         public final TardisMod tardisMod = new TardisMod();
-
 
         public static class LucraftCore {
 
@@ -244,7 +248,6 @@ public class RegenConfig {
         }
 
     }
-
 
     @EventBusSubscriber
     public static class EventHandler {

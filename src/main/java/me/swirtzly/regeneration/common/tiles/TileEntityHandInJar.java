@@ -25,7 +25,9 @@ import javax.annotation.Nullable;
 
 public class TileEntityHandInJar extends TileEntity implements ITickable, IInventory {
 
+    private static final int SEARCHRADIUS = 16;
     public int lindosAmont = 0;
+    private int othersAround = 0;
     private NonNullList<ItemStack> handInv = NonNullList.withSize(7, ItemStack.EMPTY);
 
     public int getLindosAmont() {
@@ -39,29 +41,50 @@ public class TileEntityHandInJar extends TileEntity implements ITickable, IInven
     @Override
     public void update() {
 
-        if (world.getWorldTime() % 35 == 0 && hasHand()) {
-            world.playSound(null, getPos().getX(), getPos().getY(), getPos().getZ(), RegenObjects.Sounds.JAR_BUBBLES, SoundCategory.PLAYERS, 0.4F, 0.3F);
+        if (world.getWorldTime() % 77 == 0 && hasHand()) {
+            world.playSound(null, getPos().getX(), getPos().getY(), getPos().getZ(), RegenObjects.Sounds.JAR_BUBBLES, SoundCategory.PLAYERS, 0.2F, 0.2F);
+        }
+        if (world.getWorldTime() % 200 == 0) {//update nearby containers
+            othersAround = 0;
+            for (int x = -SEARCHRADIUS; x <= SEARCHRADIUS; x++) {
+                for (int y = -SEARCHRADIUS; y <= SEARCHRADIUS; y++) {
+                    for (int z = -SEARCHRADIUS; z <= SEARCHRADIUS; z++) {
+                        if (x == 0 && y == 0 && z == 0) continue;//ignore itself
+                        BlockPos bp = this.pos.add(x, y, z);
+                        if (world.isBlockLoaded(bp) && world.getTileEntity(bp) instanceof TileEntityHandInJar) {
+                            othersAround++;
+                        }
+                    }
+                }
+            }
         }
 
-        EntityPlayer player = world.getClosestPlayer(getPos().getX(), getPos().getY(), getPos().getZ(), 56, false);
+        EntityPlayer player = world.getClosestPlayer(getPos().getX(), getPos().getY(), getPos().getZ(), 8, false);
         if (player != null) {
             IRegeneration data = CapabilityRegeneration.getForPlayer(player);
             if (data.getState() == PlayerUtil.RegenState.REGENERATING) {
-                if (world.rand.nextInt(90) < 10) {
+                if (world.rand.nextInt(90 + othersAround * 30) < 10) {
                     lindosAmont = lindosAmont + 1;
                 }
             }
         }
     }
 
+    public boolean hasHand() {
+        return getHand().getItem() == RegenObjects.Items.HAND;
+    }
+
     public ItemStack getHand() {
         return handInv.get(3);
     }
 
-    public boolean hasHand() {
-        return handInv.get(3).getItem() == RegenObjects.Items.HAND;
-    }
+    @Override
+    public void readFromNBT(NBTTagCompound compound) {
+        lindosAmont = compound.getInteger("lindos");
+        ItemStackHelper.loadAllItems(compound, this.handInv);
 
+        super.readFromNBT(compound);
+    }
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
@@ -71,14 +94,32 @@ public class TileEntityHandInJar extends TileEntity implements ITickable, IInven
         return super.writeToNBT(compound);
     }
 
-
     @Override
-    public void readFromNBT(NBTTagCompound compound) {
-        lindosAmont = compound.getInteger("lindos");
-        ItemStackHelper.loadAllItems(compound, this.handInv);
-        super.readFromNBT(compound);
+    public SPacketUpdateTileEntity getUpdatePacket() {
+        return new SPacketUpdateTileEntity(pos, 3, getUpdateTag());
     }
 
+    @Override
+    public NBTTagCompound getUpdateTag() {
+        return writeToNBT(new NBTTagCompound());
+    }
+
+    @Nullable
+    @Override
+    public ITextComponent getDisplayName() {
+        return new TextComponentTranslation(RegenObjects.Blocks.HAND_JAR.getLocalizedName());
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+        super.onDataPacket(net, pkt);
+        handleUpdateTag(pkt.getNbtCompound());
+    }
+
+    @Override
+    public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newSate) {
+        return false;
+    }
 
     @Override
     public int getSizeInventory() {
@@ -102,11 +143,9 @@ public class TileEntityHandInJar extends TileEntity implements ITickable, IInven
         if (index == 2 && !itemstack.isEmpty()) {
             return ItemStackHelper.getAndSplit(this.handInv, index, itemstack.getCount());
         } else {
-            ItemStack itemstack1 = ItemStackHelper.getAndSplit(this.handInv, index, count);
-            return itemstack1;
+            return ItemStackHelper.getAndSplit(this.handInv, index, count);
         }
     }
-
 
     @Override
     public ItemStack removeStackFromSlot(int index) {
@@ -176,37 +215,10 @@ public class TileEntityHandInJar extends TileEntity implements ITickable, IInven
         return true;
     }
 
-    @Nullable
-    @Override
-    public ITextComponent getDisplayName() {
-        return new TextComponentTranslation(RegenObjects.Blocks.HAND_JAR.getLocalizedName());
-    }
-
-    @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(pos, 3, getUpdateTag());
-    }
-
-    @Override
-    public NBTTagCompound getUpdateTag() {
-        return writeToNBT(new NBTTagCompound());
-    }
-
-    @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        super.onDataPacket(net, pkt);
-        handleUpdateTag(pkt.getNbtCompound());
-    }
-
     public void sendUpdates() {
         world.markBlockRangeForRenderUpdate(pos, pos);
-        world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 7);
         world.scheduleBlockUpdate(pos, getBlockType(), 0, 0);
         markDirty();
-    }
-
-    @Override
-    public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newSate) {
-        return false;
     }
 }

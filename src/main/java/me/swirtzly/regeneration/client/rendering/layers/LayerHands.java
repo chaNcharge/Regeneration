@@ -19,7 +19,6 @@ public class LayerHands implements LayerRenderer<EntityPlayer> {
         this.livingEntityRenderer = livingEntityRendererIn;
     }
 
-
     public void doRenderLayer(EntityPlayer entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
         GlStateManager.pushMatrix();
 
@@ -62,7 +61,7 @@ public class LayerHands implements LayerRenderer<EntityPlayer> {
         GlStateManager.translate(0, -0.050, 0.6);
 
         if (type == EnumHandRenderType.GRACE) {
-            LayerRegeneration.renderGlowingHands(player, data, 1.5F, handSide);
+            LayerRegeneration.renderGlowingHands(player, data, 1.5F);
         }
 
         if (type == EnumHandRenderType.REGEN) {

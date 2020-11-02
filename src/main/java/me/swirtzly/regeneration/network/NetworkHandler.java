@@ -6,8 +6,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 
 /**
- * Created by Sub
- * on 16/09/2018.
+ * Created by Sub on 16/09/2018.
  */
 public class NetworkHandler {
 
@@ -27,6 +26,8 @@ public class NetworkHandler {
         INSTANCE.registerMessage(MessageTriggerForcedRegen.Handler.class, MessageTriggerForcedRegen.class, 10, Side.SERVER);
         INSTANCE.registerMessage(MessageNextSkin.Handler.class, MessageNextSkin.class, 11, Side.SERVER);
         INSTANCE.registerMessage(MessageChangeType.Handler.class, MessageChangeType.class, 12, Side.SERVER);
+        INSTANCE.registerMessage(MessageOpenArch.Handler.class, MessageOpenArch.class, 13, Side.SERVER);
+        INSTANCE.registerMessage(MessageUseArch.Handler.class, MessageUseArch.class, 14, Side.SERVER);
     }
-
+	
 }
